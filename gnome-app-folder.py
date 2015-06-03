@@ -28,6 +28,11 @@ def get_folders():
     gsettings = Gio.Settings.new(SCHEMA_APP_FOLDER)
     return gsettings.get_strv('folder-children')
 
+def list_folder(folder):
+    folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
+    for key in folder_settings.list_keys():
+        print(key, ":" ,folder_settings.get_value(key))
+
 def new_folder(folder):
     list = get_folders()
     if folder in list:
@@ -37,13 +42,14 @@ def new_folder(folder):
     list.append(folder)
 
     gsettings = Gio.Settings.new(SCHEMA_APP_FOLDER)
-    if gsettings.set_strv('folder-children', list):
-        print("{} successfully added".format(folder))
-    else:
+    if not gsettings.set_strv('folder-children', list):
         print("Error: Unknwon error occured")
+        exit()
 
     folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
     folder_settings.set_string('name', folder)
+
+    print("{} successfully added".format(folder))
 
 def delete_folder(folder):
     list = get_folders()
@@ -69,7 +75,7 @@ if __name__ == '__main__':
 
     if args['list']:
         if args['<folder>']:
-            print("Not implemented yet")
+            list_folder(args['<folder>'])
         else:
             for folder in get_folders():
                 print(folder)
