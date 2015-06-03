@@ -5,8 +5,8 @@ Usage:
     gnome-app-folder list [<folder>]
     gnome-app-folder new <folder>
     gnome-app-folder delete <folder> [--force]
-    gnome-app-folder add <folder> <file>
-    gnome-app-folder remove <folder> <file>
+    gnome-app-folder add <folder> (FILES ...)
+    gnome-app-folder remove <folder> (FILES ...)
     gnome-app-folder --version
 
 Options:
@@ -32,6 +32,45 @@ def list_folder(folder):
     folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
     for key in folder_settings.list_keys():
         print(key, ":" ,folder_settings.get_value(key))
+
+def add_files(folder, files):
+    if folder not in get_folders():
+        print("Error: The folder '{}' does not exist".format(folder))
+        exit()
+
+    folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
+    files_list = folder_settings.get_strv('apps')
+    added_files = []
+    for file in files:
+        if file not in files_list:
+            files_list.append(file)
+            added_files.append(file)
+        else:
+            print('Warning: {} already exists in {}'.format(file, folder))
+
+    if len(added_files) > 0:
+        folder_settings.set_strv('apps', files_list)
+        print("Successfully added", *added_files)
+
+def remove_files(folder, files):
+    if folder not in get_folders():
+        print("Error: The folder '{}' does not exist".format(folder))
+        exit()
+
+    folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
+    files_list = folder_settings.get_strv('apps')
+    removed_files = []
+    for file in files:
+        if file in files_list:
+            files_list.remove(file)
+            removed_files.append(file)
+        else:
+            print('Warning: {} is not in {}'.format(file, folder))
+
+    if len(removed_files) > 0:
+        folder_settings.set_strv('apps', files_list)
+        print("Successfully removed", *removed_files)
+
 
 def new_folder(folder):
     list = get_folders()
@@ -84,6 +123,6 @@ if __name__ == '__main__':
     elif args['delete'] and args['<folder>']:
         delete_folder(args['<folder>'])
     elif args['add']:
-        print("Not implemented yet")
+        add_files(args['<folder>'], args['FILES'])
     elif args['remove']:
-        print("Not implemented yet")
+        remove_files(args['<folder>'], args['FILES'])
