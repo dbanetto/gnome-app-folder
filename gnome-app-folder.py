@@ -36,7 +36,7 @@ def list_folder(folder):
 def add_files(folder, files):
     if folder not in get_folders():
         print("Error: The folder '{}' does not exist".format(folder))
-        exit()
+        return
 
     folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
     files_list = folder_settings.get_strv('apps')
@@ -55,7 +55,7 @@ def add_files(folder, files):
 def remove_files(folder, files):
     if folder not in get_folders():
         print("Error: The folder '{}' does not exist".format(folder))
-        exit()
+        return
 
     folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
     files_list = folder_settings.get_strv('apps')
@@ -83,7 +83,7 @@ def new_folder(folder):
     gsettings = Gio.Settings.new(SCHEMA_APP_FOLDER)
     if not gsettings.set_strv('folder-children', list):
         print("Error: Unknwon error occured")
-        exit()
+        return
 
     folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
     folder_settings.set_string('name', folder)
@@ -95,34 +95,38 @@ def delete_folder(folder):
     if folder not in list:
         print("Error: {} does not exists".format(folder))
         return
-    list.remove(folder)
 
-    app_folder_settings = Gio.Settings.new(SCHEMA_APP_FOLDER)
-    if app_folder_settings.set_strv('folder-children', list):
-        print("{} successfully removed".format(folder))
-    else:
-        print("Error: Unknwon error occured")
+    list.remove(folder)
 
     # Clean folder settings
     folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
     for key in folder_settings.list_keys():
         folder_settings.reset(key)
 
+    app_folder_settings = Gio.Settings.new(SCHEMA_APP_FOLDER)
+    if not app_folder_settings.set_strv('folder-children', list):
+        print("Error: Unknwon error occured")
+        return
+
+    print("{} successfully removed".format(folder))
+
 if __name__ == '__main__':
     args = docopt(__doc__, version=VERSION)
-    # print(args) #TODO: Remove me
-
     if args['list']:
         if args['<folder>']:
             list_folder(args['<folder>'])
         else:
             for folder in get_folders():
                 print(folder)
-    elif args['new'] and args['<folder>']:
+
+    elif args['new']:
         new_folder(args['<folder>'])
-    elif args['delete'] and args['<folder>']:
+
+    elif args['delete']:
         delete_folder(args['<folder>'])
+
     elif args['add']:
         add_files(args['<folder>'], args['FILES'])
+
     elif args['remove']:
         remove_files(args['<folder>'], args['FILES'])
