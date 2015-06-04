@@ -7,6 +7,7 @@ Usage:
     gnome-app-folder delete <folder> [--force]
     gnome-app-folder add <folder> (FILES ...)
     gnome-app-folder remove <folder> (FILES ...)
+    gnome-app-folder edit <folder> (name <NAME>|translate <bool>)
     gnome-app-folder --version
 
 Options:
@@ -110,6 +111,20 @@ def delete_folder(folder):
 
     print("{} successfully removed".format(folder))
 
+def edit_folder_property(folder, prop, val):
+    if folder not in get_folders():
+        print("Error: {} does not exists".format(folder))
+        return
+
+    folder_settings = Gio.Settings.new_with_path(SCHEMA_FOLDER, gen_folder_path(folder))
+    if prop not in folder_settings.list_keys():
+        print("Error: Invalid property '{}'".format(prop))
+
+    old = folder_settings.get_string(prop)
+    folder_settings.set_string(prop, val)
+    print("Editted {folder}'s property {prop} from {old} to {new}".format(folder=folder, prop=prop, old=old, new=val))
+
+
 if __name__ == '__main__':
     args = docopt(__doc__, version=VERSION)
     if args['list']:
@@ -130,3 +145,10 @@ if __name__ == '__main__':
 
     elif args['remove']:
         remove_files(args['<folder>'], args['FILES'])
+
+    elif args['edit']:
+        if args['name']:
+            edit_folder_property(args['<folder>'], 'name', args['<NAME>'])
+
+    else:
+        print(args)
